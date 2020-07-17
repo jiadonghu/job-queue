@@ -1,5 +1,5 @@
-const amqp = require('amqplib');
 const CronJob = require('cron').CronJob;
+const { queue, connect } = require('./connection');
 
 const cronJobs = (channel, queue) => {
   // every 10 seconds
@@ -7,8 +7,8 @@ const cronJobs = (channel, queue) => {
     '0/10 * * * * *',
     function () {
       // push 6 msgs to queue
-      for (let i = 0; i < 6; i++ ) {
-        const msg = { id: i, from: 'rabbitMQ' };
+      for (let i = 0; i < 5; i++ ) {
+        const msg = { id: i, from: 'rabbitMQ', timestamp: Date.now() };
         channel.sendToQueue(queue, Buffer.from(JSON.stringify(msg)), { persistent: true });
       }
     },
@@ -20,10 +20,7 @@ const cronJobs = (channel, queue) => {
 }
 
 (async () => {
-  const connection = await amqp.connect('amqp://localhost');
-  const channel = await connection.createChannel();
-  const queue = 'task_queue';
-  channel.assertQueue(queue, { durable: true });
+  const channel = await connect();
 
   //start cron jobs
   cronJobs(channel, queue);
